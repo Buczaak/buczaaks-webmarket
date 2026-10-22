@@ -1,0 +1,145 @@
+# ======================================================================
+#  KryptoGielda - konfiguracja
+#  Zmiany w tym pliku wymagają restartu serwera (/gieldaadmin reload
+#  przeładowuje tylko messages.yml).
+#  Waluta giełdy to wyłącznie waluta serwerowa (Vault). Plugin nie ma
+#  żadnego połączenia z prawdziwymi pieniędzmi.
+# ======================================================================
+
+# ---------------------------------------------------------------- strona WWW
+web:
+  enabled: true
+  # Adres nasłuchu. 0.0.0.0 = wszystkie interfejsy. Jeśli używasz reverse proxy
+  # (nginx/Caddy z HTTPS), ustaw 127.0.0.1 i wystaw tylko proxy.
+  bind: 0.0.0.0
+  port: 8123
+  # Adres pokazywany graczom po /gielda link, np. https://gielda.twojserwer.pl
+  public-url: ""
+  title: "Giełda Krypto"
+  # Ustaw true, gdy strona jest dostępna wyłącznie przez HTTPS (ciasteczko dostanie flagę Secure).
+  secure-cookie: false
+  # Ustaw true TYLKO za własnym reverse proxy, które przekazuje X-Forwarded-For.
+  trust-forwarded-headers: false
+  # Dodatkowe dozwolone adresy Origin (np. https://gielda.twojserwer.pl), jeśli strona jest za proxy.
+  allowed-origins: []
+  # Limity zapytań liczone są na adres IP. Za tunelem frp (typ tcp) wszyscy gracze wyglądają jak 127.0.0.1 -
+  # dla takich adresów limity są automatycznie mnożone x20. Tu możesz je dodatkowo zwiększyć (1-1000).
+  rate-limit-multiplier: 1
+  session-hours: 12
+  link-code-minutes: 2
+  ranking-size: 50
+  ranking-show-bots: false
+  # Oznaczaj transakcje botów w kanale "Na żywo" (zalecane - uczciwe wobec graczy).
+  label-bots: true
+  # Własny wygląd: skopiuj pliki z jar-a (index.html, style.css, app.js) do tego folderu
+  # (względem folderu pluginu). Pusty folder/brak folderu = wbudowana strona.
+  override-dir: "web"
+
+# ---------------------------------------------------------------- baza danych
+database:
+  type: sqlite          # sqlite (domyślnie, zero konfiguracji) albo mysql
+  sqlite-file: gielda.db
+  mysql:
+    host: 127.0.0.1
+    port: 3306
+    database: gielda
+    user: gielda
+    password: ""
+    params: "useSSL=false&characterEncoding=utf8&serverTimezone=UTC"
+
+# ---------------------------------------------------------------- rynek
+market:
+  currency: PLN
+  min-price: 0.50                 # cena nigdy nie spadnie poniżej
+  sell-fee-percent: 2.0           # prowizja przy sprzedaży (spread kupno/sprzedaż)
+  # Wartość transakcji, która przesuwa cenę o ok. 1% (głębokość rynku).
+  # Większa liczba = rynek mniej wrażliwy na duże zlecenia.
+  depth-value-per-percent: 10000.00
+  # Największy jednorazowy skok ceny po kupnie (100 = cena może się najwyżej podwoić jednym zleceniem).
+  max-price-move-per-trade-percent: 100
+  max-orders-per-player: 20
+  min-trade-value: 0.01
+  history-days: 30                # tyle dni historii cen i transakcji jest przechowywane
+  bot-start-balance: 150000.00    # (informacyjnie) kapitał startowy botów
+
+# ---------------------------------------------------------------- kryptowaluty
+# Nazwa: litery/cyfry/_ (2-24 znaków). icon = nazwa materiału Minecraft (do menu w grze).
+# volatility-min/max = zakres losowego mnożnika ceny w jednym cyklu rynku.
+# liquidity = ile sztuk przesuwa cenę o 1% (0 = wyliczane automatycznie).
+coins:
+  MineCoin:      { price: 100.0,  icon: GOLD_NUGGET,    volatility-min: 0.96, volatility-max: 1.04 }
+  Enderium:      { price: 250.0,  icon: AMETHYST_SHARD, volatility-min: 0.93, volatility-max: 1.07 }
+  NetherTether:  { price: 50.0,   icon: NETHER_STAR,    volatility-min: 0.99, volatility-max: 1.01 }
+  CreepDoge:     { price: 10.0,   icon: GUNPOWDER,      volatility-min: 0.85, volatility-max: 1.15 }
+  DiamondHands:  { price: 500.0,  icon: DIAMOND,        volatility-min: 0.90, volatility-max: 1.10 }
+  RedstoneChain: { price: 75.0,   icon: REDSTONE,       volatility-min: 0.97, volatility-max: 1.03 }
+  SlimeToken:    { price: 25.0,   icon: SLIME_BALL,     volatility-min: 0.88, volatility-max: 1.12 }
+  WardenCoin:    { price: 1000.0, icon: ECHO_SHARD,     volatility-min: 0.91, volatility-max: 1.09 }
+
+# ---------------------------------------------------------------- symulacja rynku
+# Rynek zawiera automatyczne boty i losowe wydarzenia. Strona i czat to oznaczają.
+simulation:
+  orders-interval-seconds: 10     # jak często sprawdzane są zlecenia limit
+  market-cycle:
+    enabled: true
+    interval-seconds: 300
+    mood-max-percent: 3.0         # losowy nastrój całego rynku w cyklu (+/-)
+    mean-reversion: 0.03          # siła powrotu cen do wartości startowej (0 = brak)
+  # Drobne, losowe ruchy cen co kilka sekund - dzięki nim wykres „żyje” między głównymi cyklami.
+  # To prawdziwe zmiany ceny (po takiej cenie handlują gracze i boty), nie ozdobnik w przeglądarce.
+  # max-percent = największy ruch dla waluty o przeciętnej zmienności (stabilne waluty ruszają się mniej, ryzykowne bardziej).
+  micro-ticks:
+    enabled: true
+    interval-seconds: 5
+    max-percent: 0.25
+  bots:
+    enabled: true
+    interval-seconds: 30
+    action-chance-percent: 60
+    names: [Wieloryb_Z_Dubaju, KryptoFundusz_X, WolfOfMinecraft, DiamondHandz, Trader_PRO, InstytucjaBankowa]
+    budget-min: 50000.00
+    budget-max: 800000.00
+    buy-chance-percent: 55
+    buy-multiplier: { min: 1.01, max: 1.07 }
+    sell-multiplier: { min: 0.92, max: 0.99 }
+    sell-fraction: { min: 0.3, max: 1.0 }
+  events:
+    enabled: true
+    interval-seconds: 1800
+    chance-percent: 60
+    # Dla każdej waluty jest po jednym evencie hossy (mnożnik > 1) i bessy (mnożnik < 1).
+    # color: kod koloru Minecraft; multiplier: mnożnik ceny (np. 1.45 = +45%, 0.60 = -40%); weight: waga losowania
+    list:
+      - { type: "HOSSA", text: "Gigantyczna żyła złota pod spawnem! Wydobycie rośnie, a MineCoin drożeje!", coin: MineCoin, multiplier: 1.35, weight: 1, color: "&a" }
+      - { type: "BESSA", text: "Wykryto masowy dupe MineCoin! Rynek zalany tanimi monetami, cena leci w dół!", coin: MineCoin, multiplier: 0.7, weight: 1, color: "&c" }
+      - { type: "HOSSA", text: "Odkryto nową fortecę Endu! Popyt na Enderium gwałtownie rośnie.", coin: Enderium, multiplier: 1.4, weight: 1, color: "&a" }
+      - { type: "BESSA", text: "Armia Endermanów wyprzedaje Enderium z portfeli! Panika na rynku.", coin: Enderium, multiplier: 0.65, weight: 1, color: "&c" }
+      - { type: "HOSSA", text: "Nether Bank ogłasza pełne pokrycie rezerw. Zaufanie do NetherTether rośnie!", coin: NetherTether, multiplier: 1.2, weight: 1, color: "&a" }
+      - { type: "BESSA", text: "Plotki o utracie pokrycia NetherTether! Stablecoin traci kotwicę.", coin: NetherTether, multiplier: 0.75, weight: 1, color: "&c" }
+      - { type: "HOSSA", text: "Viralowy mem o CreepDoge! Tłumy rzucają się do zakupów!", coin: CreepDoge, multiplier: 1.45, weight: 1, color: "&a" }
+      - { type: "BESSA", text: "Creeper wysadził skrzynię z CreepDoge! Inwestorzy w panice sprzedają.", coin: CreepDoge, multiplier: 0.6, weight: 1, color: "&c" }
+      - { type: "HOSSA", text: "Odkryto nowe złoża diamentów. DiamondHands gwałtownie zyskuje na wartości!", coin: DiamondHands, multiplier: 1.25, weight: 1, color: "&a" }
+      - { type: "BESSA", text: "Wieloryby realizują zyski! Wielka wyprzedaż DiamondHands.", coin: DiamondHands, multiplier: 0.72, weight: 1, color: "&c" }
+      - { type: "HOSSA", text: "Genialny układ redstone przyspiesza sieć RedstoneChain! Rośnie zainteresowanie.", coin: RedstoneChain, multiplier: 1.3, weight: 1, color: "&a" }
+      - { type: "BESSA", text: "Wykryto krytyczny błąd w sieci RedstoneChain! Inwestorzy wyprzedają aktywa!", coin: RedstoneChain, multiplier: 0.6, weight: 1, color: "&c" }
+      - { type: "HOSSA", text: "Slime'y masowo przyjmują SlimeToken jako płatność! Cena skacze w górę.", coin: SlimeToken, multiplier: 1.35, weight: 1, color: "&a" }
+      - { type: "BESSA", text: "Wyłączono slime chunk! Popyt na SlimeToken załamuje się.", coin: SlimeToken, multiplier: 0.65, weight: 1, color: "&c" }
+      - { type: "HOSSA", text: "Najwięksi gracze przechodzą na WardenCoin. To staje się waluta elitarna!", coin: WardenCoin, multiplier: 1.6, weight: 1, color: "&a" }
+      - { type: "BESSA", text: "Warden obudzony w sercu Głębi! Panika, WardenCoin gwałtownie tanieje.", coin: WardenCoin, multiplier: 0.62, weight: 1, color: "&c" }
+
+# ---------------------------------------------------------------- czat
+chat:
+  broadcast-trades: true
+  broadcast-bots: true
+  min-broadcast-value: 0          # ogłaszaj tylko transakcje o wartości co najmniej tyle
+
+# ---------------------------------------------------------------- import ze starej giełdy (PHP+Skript)
+# Jednorazowo: ustaw enabled: true, wpisz dane STAREJ bazy MySQL, zrestartuj serwer i wpisz /gieldaadmin import.
+# Po imporcie usuń hasło z tego pliku i wyłącz import.
+import:
+  enabled: false
+  host: 127.0.0.1
+  port: 3306
+  database: gielda_mc
+  user: ""
+  password: ""

@@ -1,0 +1,28 @@
+name: KryptoGielda
+version: '${project.version}'
+main: pl.kryptogielda.plugin.GieldaPlugin
+api-version: '1.21'
+description: Fikcyjna giełda kryptowalut z własną stroną WWW (wyłącznie waluta serwerowa)
+authors: [KryptoGielda]
+depend: [Vault]
+commands:
+  gielda:
+    description: Menu giełdy kryptowalut
+    usage: /gielda [menu|portfel|rynek|link|saldo|help]
+    aliases: [krypto]
+  wplac:
+    description: Wpłać pieniądze z gry na konto giełdowe
+    usage: /wplac <kwota>
+  wyplac:
+    description: Wypłać pieniądze z konta giełdowego do gry
+    usage: /wyplac <kwota>
+  gieldaadmin:
+    description: Administracja giełdą
+    usage: /gieldaadmin <cena|pump|dump|trend|wymus|event|reset|gracz|wyplaty|import|reload>
+permissions:
+  gielda.use:
+    description: Korzystanie z giełdy
+    default: true
+  gielda.admin:
+    description: Administracja giełdą i panel admina na stronie WWW
+    default: op
