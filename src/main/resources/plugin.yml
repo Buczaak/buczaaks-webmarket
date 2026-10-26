@@ -1,0 +1,31 @@
+name: WebMarket
+version: '${project.version}'
+main: pl.kryptogielda.plugin.GieldaPlugin
+api-version: '1.21'
+description: WebMarket - a fictional crypto exchange with its own website (in-game currency only)
+authors: [WebMarket]
+depend: [Vault]
+commands:
+  gielda:
+    description: Open the crypto exchange menu
+    usage: /gielda [menu|portfel|rynek|link|saldo|help]
+    aliases: [krypto, market, exchange]
+  wplac:
+    description: Deposit in-game money to your exchange account
+    usage: /wplac <amount>
+    aliases: [deposit]
+  wyplac:
+    description: Withdraw money from your exchange account to the game
+    usage: /wyplac <amount>
+    aliases: [withdraw]
+  gieldaadmin:
+    description: Exchange administration
+    usage: /gieldaadmin <cena|pump|dump|trend|wymus|event|moneta|reset|gracz|wyplaty|import|reload>
+    aliases: [marketadmin]
+permissions:
+  gielda.use:
+    description: Use the exchange
+    default: true
+  gielda.admin:
+    description: Exchange administration and the admin panel on the website
+    default: op

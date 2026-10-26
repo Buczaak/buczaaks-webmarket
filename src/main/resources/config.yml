@@ -1,0 +1,140 @@
+# ======================================================================
+#  WebMarket - configuration
+#  Changes to this file need a server restart (/gieldaadmin reload
+#  only reloads the messages file).
+#  The exchange uses the server's own currency (Vault) only. The plugin
+#  has no connection to real money whatsoever.
+# ======================================================================
+
+# Language of in-game messages and commands output, the website and the default events: pl or en.
+# (Players can switch the website language with the PL/EN button; this is the default.)
+language: pl
+
+# ---------------------------------------------------------------- website
+web:
+  enabled: true
+  # Listen address. 0.0.0.0 = all interfaces. If you use a reverse proxy
+  # (nginx/Caddy with HTTPS), set 127.0.0.1 and expose only the proxy.
+  bind: 0.0.0.0
+  port: 8123
+  # Address shown to players after /gielda link, e.g. https://market.yourserver.com
+  public-url: ""
+  title: "WebMarket"
+  # Set to true when the site is served over HTTPS only (the cookie gets the Secure flag).
+  secure-cookie: false
+  # Set to true ONLY behind your own reverse proxy that sets X-Forwarded-For.
+  trust-forwarded-headers: false
+  # Extra allowed Origin addresses (e.g. https://market.yourserver.com) if the site is behind a proxy.
+  allowed-origins: []
+  # Request limits are counted per IP address. Behind an frp tunnel (type tcp) all players look like 127.0.0.1 -
+  # for such addresses the limits are automatically multiplied x20. You can raise them further here (1-1000).
+  rate-limit-multiplier: 1
+  session-hours: 12
+  link-code-minutes: 2
+  ranking-size: 50
+  ranking-show-bots: false
+  # Label bot trades in the live feed (recommended - fair towards players).
+  label-bots: true
+  # Custom look: copy the files from the jar (index.html, style.css, app.js, i18n.js) into this folder
+  # (relative to the plugin folder). Empty or missing folder = the built-in site.
+  override-dir: "web"
+
+# ---------------------------------------------------------------- database
+database:
+  type: sqlite          # sqlite (default, zero setup) or mysql
+  sqlite-file: gielda.db
+  mysql:
+    host: 127.0.0.1
+    port: 3306
+    database: gielda
+    user: gielda
+    password: ""
+    params: "useSSL=false&characterEncoding=utf8&serverTimezone=UTC"
+
+# ---------------------------------------------------------------- market
+market:
+  currency: PLN
+  min-price: 0.50                 # the price never drops below this
+  sell-fee-percent: 2.0           # fee on selling (buy/sell spread)
+  # Trade value that moves the price by about 1% (market depth).
+  # A bigger number = the market is less sensitive to large orders.
+  depth-value-per-percent: 10000.00
+  # Largest single price jump after a buy (100 = one order can at most double the price).
+  max-price-move-per-trade-percent: 100
+  max-orders-per-player: 20
+  min-trade-value: 0.01
+  history-days: 30                # how many days of price and trade history are kept
+  bot-start-balance: 150000.00    # (informational) starting capital of the bots
+
+# ---------------------------------------------------------------- coins
+# Name: letters/digits/_ (2-24 characters). icon = Minecraft material name (used in the in-game menu).
+# volatility-min/max = range of the random price multiplier in one market cycle.
+# liquidity (optional) = how many units move the price by 1% (0 = calculated automatically).
+# You can also create custom coins in the Admin tab of the website - no need to edit this file.
+coins:
+  MineCoin:      { price: 100.0,  icon: GOLD_NUGGET,    volatility-min: 0.96, volatility-max: 1.04 }
+  Enderium:      { price: 250.0,  icon: AMETHYST_SHARD, volatility-min: 0.93, volatility-max: 1.07 }
+  NetherTether:  { price: 50.0,   icon: NETHER_STAR,    volatility-min: 0.99, volatility-max: 1.01 }
+  CreepDoge:     { price: 10.0,   icon: GUNPOWDER,      volatility-min: 0.85, volatility-max: 1.15 }
+  DiamondHands:  { price: 500.0,  icon: DIAMOND,        volatility-min: 0.90, volatility-max: 1.10 }
+  RedstoneChain: { price: 75.0,   icon: REDSTONE,       volatility-min: 0.97, volatility-max: 1.03 }
+  SlimeToken:    { price: 25.0,   icon: SLIME_BALL,     volatility-min: 0.88, volatility-max: 1.12 }
+  WardenCoin:    { price: 1000.0, icon: ECHO_SHARD,     volatility-min: 0.91, volatility-max: 1.09 }
+
+# ---------------------------------------------------------------- market simulation
+# The market contains automatic bots and random events. The website and chat label them.
+simulation:
+  orders-interval-seconds: 10     # how often limit orders are checked
+  market-cycle:
+    enabled: true
+    interval-seconds: 300
+    mood-max-percent: 3.0         # random mood of the whole market per cycle (+/-)
+    mean-reversion: 0.03          # strength of the pull of prices back to their start value (0 = none)
+  # Small random price moves every few seconds - they keep the chart "alive" between the main cycles.
+  # These are real price changes (players and bots trade at that price), not a visual effect in the browser.
+  # max-percent = largest move for a coin of average volatility (stable coins move less, risky ones more).
+  micro-ticks:
+    enabled: true
+    interval-seconds: 5
+    max-percent: 0.25
+  bots:
+    enabled: true
+    interval-seconds: 30
+    action-chance-percent: 60
+    names: [Whale_Alert, DiamondHandz, Moon_Boy, Paper_Hands, HODL_King, Satoshi_Steve, Crypto_Creeper, Block_Baron, Ender_Whale, Pickaxe_Capital, Redstone_Ventures, Nether_Hedge_Fund, Wolf_Of_Blockchain, Trader_PRO, Lazy_Alpaca, Golem_Capital, Villager_Bank, Bull_Run_Bob, Bear_Hugger, Sigma_Trader]
+    budget-min: 50000.00
+    budget-max: 800000.00
+    buy-chance-percent: 55
+    buy-multiplier: { min: 1.01, max: 1.07 }
+    sell-multiplier: { min: 0.92, max: 0.99 }
+    sell-fraction: { min: 0.3, max: 1.0 }
+  events:
+    enabled: true
+    interval-seconds: 1800
+    chance-percent: 60
+    # Language of the built-in events (one bull and one bear event per coin): en (default) or pl.
+    default-language: en
+    # The default events are built into the plugin.
+    # Add your own events in the admin panel on the website (Admin tab) - no need to edit this file.
+    # If you still want to keep them here, uncomment 'list' (NOTE: then it is YOUR list, not the default one):
+    # list:
+    #   - { type: "HOSSA", text: "Event description", coin: MineCoin, multiplier: 1.35, weight: 1, color: "&a" }
+    #   type: "HOSSA" = bull (price up), "BESSA" = bear (price down) - these type names are kept for compatibility
+    # multiplier: price multiplier (1.45 = +45%, 0.60 = -40%); weight: draw weight; color: Minecraft color code
+
+# ---------------------------------------------------------------- chat
+chat:
+  broadcast-trades: true
+  broadcast-bots: true
+  min-broadcast-value: 0          # only announce trades worth at least this much
+
+# ---------------------------------------------------------------- import from the old exchange (PHP + Skript)
+# One-off: set enabled: true, enter the details of the OLD MySQL database, restart the server and run /gieldaadmin import.
+# After the import remove the password from this file and disable the import.
+import:
+  enabled: false
+  host: 127.0.0.1
+  port: 3306
+  database: gielda_mc
+  user: ""
+  password: ""

@@ -1,0 +1,312 @@
+<!doctype html>
+<html lang="pl">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="dark">
+  <title>WebMarket</title>
+  <link rel="icon" href="/favicon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="/style.css">
+</head>
+<body>
+  <header class="topbar">
+    <div class="topbar-left">
+      <h1 class="brand"><span id="brand">WebMarket</span> <small class="version" id="brand-version"></small></h1>
+      <nav class="tabs" aria-label="Views">
+        <button type="button" class="tab is-active" data-view="market" data-i18n="tab.market">Giełda</button>
+        <button type="button" class="tab" data-view="ranking" data-i18n="tab.ranking">🏆 Ranking</button>
+        <button type="button" class="tab tab-admin" data-view="admin" id="tab-admin" hidden data-i18n="tab.admin">⚙️ Admin</button>
+      </nav>
+    </div>
+    <div class="topbar-right" id="userbox">
+      <button type="button" class="btn btn-ghost lang-btn" id="lang-toggle" data-i18n="lang.switch" data-i18n-title="lang.title">EN</button>
+      <span class="clock" id="clock" aria-hidden="true"></span>
+    </div>
+  </header>
+
+  <main class="page">
+    <div class="toasts" id="toasts" role="status" aria-live="polite"></div>
+
+    <!-- ===================== GIEŁDA ===================== -->
+    <section id="view-market" class="view">
+      <div class="layout">
+        <aside class="col col-left" id="col-left">
+          <section class="card" id="card-login" hidden>
+            <h2 class="card-title" data-i18n="login.title">Zaloguj się</h2>
+            <p class="muted small"><span data-i18n="login.hint1">Wejdź na serwer i wpisz komendę</span> <code data-i18n="cmd.link">/gielda link</code>. <span data-i18n="login.hint2">Otrzymasz kod ważny kilka minut.</span></p>
+            <form id="login-form" class="stack" autocomplete="off">
+              <label class="sr-only" for="login-code" data-i18n="login.code-label">Kod z gry</label>
+              <input id="login-code" class="input input-code" type="text" maxlength="12" placeholder="KOD Z GRY" data-i18n-ph="login.code-ph" spellcheck="false" autocapitalize="characters" required>
+              <button type="submit" class="btn btn-primary" data-i18n="login.submit">Zaloguj się</button>
+            </form>
+            <p class="muted small" data-i18n="login.note">Do czasu zalogowania możesz oglądać rynek, wykresy i ranking.</p>
+          </section>
+
+          <section class="card" id="card-wallet" hidden>
+            <h2 class="card-title" data-i18n="wallet.title">Twój kapitał</h2>
+            <p class="big-number"><span id="wallet-balance">0.00</span> <span class="cur" data-cur>PLN</span></p>
+            <p class="muted small"><span data-i18n="wallet.worth">Majątek łącznie:</span> <b id="wallet-worth">0.00</b> <span data-cur>PLN</span></p>
+            <form id="withdraw-form" class="stack divider" autocomplete="off">
+              <label class="label" for="withdraw-amount" data-i18n="withdraw.label">Wypłata do gry</label>
+              <div class="row">
+                <input id="withdraw-amount" class="input" inputmode="decimal" placeholder="Kwota" data-i18n-ph="withdraw.ph" required>
+                <button type="button" class="btn btn-ghost" id="withdraw-max">MAX</button>
+              </div>
+              <button type="submit" class="btn btn-primary" data-i18n="withdraw.submit">Wypłać do gry</button>
+              <p class="muted small"><span data-i18n="withdraw.hint1">Wpłata na konto giełdowe: komenda</span> <code data-i18n="cmd.deposit">/wplac &lt;kwota&gt;</code> <span data-i18n="withdraw.hint2">w grze.</span></p>
+            </form>
+          </section>
+
+          <section class="card" id="card-portfolio" hidden>
+            <h2 class="card-title" data-i18n="portfolio.title">Twoje portfolio</h2>
+            <ul class="list" id="portfolio-list"></ul>
+          </section>
+
+          <section class="card" id="card-orders" hidden>
+            <h2 class="card-title accent-blue" data-i18n="orders.title">⏲ Twoje zlecenia limit</h2>
+            <div class="list" id="orders-list"></div>
+          </section>
+
+          <section class="card">
+            <h2 class="card-title accent-purple" data-i18n="news.title">📰 Wiadomości z rynku</h2>
+            <div class="list" id="news-list"></div>
+          </section>
+        </aside>
+
+        <section class="col col-mid">
+          <div class="card coin-strip" id="coin-strip" role="tablist" data-i18n-aria="coins.aria" aria-label="Kryptowaluty"></div>
+
+          <div class="card" id="coin-card">
+            <div class="coin-head">
+              <div>
+                <h2 class="coin-name" id="coin-name">—</h2>
+                <div class="price-row">
+                  <p class="price"><span id="coin-price">—</span> <span class="cur" data-cur>PLN</span></p>
+                  <span class="badge" id="coin-change"></span>
+                  <span class="badge" id="coin-pl" hidden></span>
+                </div>
+                <p class="muted small" id="coin-stats"></p>
+              </div>
+            </div>
+
+            <div class="trade-grid">
+              <form class="trade-box trade-buy" id="buy-form" autocomplete="off">
+                <div class="trade-top"><span class="label" data-i18n="buy.title">Kup (rynkowo)</span><span class="muted small"><span data-i18n="max">Max:</span> <b id="buy-max">0</b> <span data-i18n="pcs">szt.</span></span></div>
+                <div class="row">
+                  <input class="input input-center" name="qty" inputmode="decimal" placeholder="Ilość" data-i18n-ph="qty.ph" data-i18n-aria="qty.buy-aria" aria-label="Ilość do kupienia" required>
+                  <button type="button" class="btn btn-ghost" id="buy-max-btn">MAX</button>
+                </div>
+                <p class="quote small muted" id="buy-quote">&nbsp;</p>
+                <button type="submit" class="btn btn-buy" data-i18n="buy.btn">KUP</button>
+              </form>
+              <form class="trade-box trade-sell" id="sell-form" autocomplete="off">
+                <div class="trade-top"><span class="label" data-i18n="sell.title">Sprzedaj (rynkowo)</span><span class="muted small"><span data-i18n="have">Masz:</span> <b id="sell-max">0</b> <span data-i18n="pcs">szt.</span></span></div>
+                <div class="row">
+                  <input class="input input-center" name="qty" inputmode="decimal" placeholder="Ilość" data-i18n-ph="qty.ph" data-i18n-aria="qty.sell-aria" aria-label="Ilość do sprzedania" required>
+                  <button type="button" class="btn btn-ghost" id="sell-max-btn">MAX</button>
+                </div>
+                <p class="quote small muted" id="sell-quote">&nbsp;</p>
+                <button type="submit" class="btn btn-sell" data-i18n="sell.btn">SPRZEDAJ</button>
+              </form>
+            </div>
+            <p class="muted small" id="fee-note"></p>
+
+            <div class="limit-box" id="limit-box">
+              <h3 class="subtitle accent-blue" data-i18n="limit.title">⏲ Zlecenia automatyczne (limit)</h3>
+              <div class="trade-grid">
+                <form class="row-form" id="buy-limit-form" autocomplete="off">
+                  <input class="input" name="qty" inputmode="decimal" placeholder="Ilość (szt.)" data-i18n-ph="limit.qty-ph" data-i18n-aria="qty.aria" aria-label="Ilość" required>
+                  <input class="input" name="price" inputmode="decimal" placeholder="Gdy spadnie do" data-i18n-ph="limit.buy-ph" data-i18n-aria="limit.price-aria" aria-label="Cena limit" required>
+                  <button type="submit" class="btn btn-blue" data-i18n="limit.buy-btn">Kupno limit</button>
+                </form>
+                <form class="row-form" id="sell-limit-form" autocomplete="off">
+                  <input class="input" name="qty" inputmode="decimal" placeholder="Ilość (szt.)" data-i18n-ph="limit.qty-ph" data-i18n-aria="qty.aria" aria-label="Ilość" required>
+                  <input class="input" name="price" inputmode="decimal" placeholder="Gdy wzrośnie do" data-i18n-ph="limit.sell-ph" data-i18n-aria="limit.price-aria" aria-label="Cena limit" required>
+                  <button type="submit" class="btn btn-blue" data-i18n="limit.sell-btn">Sprzedaż limit</button>
+                </form>
+              </div>
+            </div>
+
+            <div class="tools">
+              <div class="tools-row">
+                <span class="label" data-i18n="lines.label">📏 Linie:</span>
+                <input id="line-price" class="input input-narrow" inputmode="decimal" placeholder="Cena" data-i18n-ph="lines.price-ph" data-i18n-aria="lines.price-aria" aria-label="Cena linii">
+                <button type="button" class="btn btn-support" id="line-support" data-i18n="lines.support">+ Wsparcie</button>
+                <button type="button" class="btn btn-resist" id="line-resist" data-i18n="lines.resist">+ Opór</button>
+                <button type="button" class="btn btn-ghost" id="line-clear" data-i18n="lines.clear">🗑 Wyczyść</button>
+                <span class="spacer"></span>
+                <div class="tf" id="tf-buttons" role="group" data-i18n-aria="tf.aria" aria-label="Interwał świec">
+                  <button type="button" class="tf-btn" data-tf="60">1m</button>
+                  <button type="button" class="tf-btn is-active" data-tf="300">5m</button>
+                  <button type="button" class="tf-btn" data-tf="900">15m</button>
+                  <button type="button" class="tf-btn" data-tf="3600">1h</button>
+                  <button type="button" class="tf-btn" data-tf="14400">4h</button>
+                </div>
+              </div>
+              <div class="tools-row"><div class="chips" id="line-chips"></div></div>
+              <p class="muted tiny" data-i18n="chart.hint">Kliknij na wykresie, by pobrać cenę. Kółko myszy – przybliżanie, przeciąganie – przesuwanie, dwuklik – reset widoku.</p>
+            </div>
+
+            <div class="chart-wrap"><canvas id="chart" data-i18n-aria="chart.aria" aria-label="Wykres świecowy" role="img"></canvas></div>
+
+            <div id="history-box" hidden>
+              <h3 class="subtitle"><span data-i18n="history.title">Twoja historia</span> (<span id="history-coin"></span>)</h3>
+              <div class="table-wrap">
+                <table class="table">
+                  <thead><tr><th data-i18n="history.type">Typ</th><th data-i18n="history.qty">Ilość</th><th data-i18n="history.rate">Kurs za szt.</th><th data-i18n="history.amount">Kwota</th><th class="right" data-i18n="history.time">Czas</th></tr></thead>
+                  <tbody id="history-body"></tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <aside class="col col-right">
+          <section class="card">
+            <h2 class="card-title"><span class="live-dot" aria-hidden="true"></span> <span data-i18n="live.title">Na żywo</span></h2>
+            <div class="list" id="feed-list"></div>
+          </section>
+        </aside>
+      </div>
+    </section>
+
+    <!-- ===================== RANKING ===================== -->
+    <section id="view-ranking" class="view" hidden>
+      <div class="card narrow">
+        <h2 class="card-title accent-yellow center" data-i18n="ranking.title">🏆 Ranking najbogatszych inwestorów</h2>
+        <div class="table-wrap">
+          <table class="table">
+            <thead><tr><th data-i18n="ranking.place">Miejsce</th><th data-i18n="ranking.player">Gracz</th><th class="right" data-i18n="ranking.worth">Kapitał całkowity</th></tr></thead>
+            <tbody id="ranking-body"></tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <!-- ===================== ADMIN ===================== -->
+    <section id="view-admin" class="view" hidden>
+      <div class="card admin-card">
+        <h2 class="card-title accent-red center" data-i18n="admin.title">⚙️ Centrum dowodzenia gospodarką</h2>
+        <div class="admin-grid">
+          <form class="card inner" id="admin-price-form" autocomplete="off">
+            <h3 class="subtitle" data-i18n="admin.price.title">1. Zmień cenę</h3>
+            <select class="input" name="coin" data-coin-select data-i18n-aria="admin.coin-aria" aria-label="Waluta"></select>
+            <div class="row">
+              <select class="input" name="mode" data-i18n-aria="admin.mode-aria" aria-label="Tryb">
+                <option value="pump" data-i18n="admin.pump">PUMP (+ %)</option>
+                <option value="dump" data-i18n="admin.dump">DUMP (− %)</option>
+                <option value="set" data-i18n="admin.set">USTAW CENĘ</option>
+              </select>
+              <input class="input" name="value" inputmode="decimal" placeholder="np. 20" data-i18n-ph="admin.value-ph" required>
+            </div>
+            <button type="submit" class="btn btn-danger" data-i18n="admin.do">Wykonaj 🚀</button>
+          </form>
+
+          <form class="card inner" id="admin-trend-form" autocomplete="off">
+            <h3 class="subtitle" data-i18n="admin.trend.title">2. Cichy trend</h3>
+            <p class="muted small" data-i18n="admin.trend.hint">Ukryty bonus, który wejdzie w życie przy najbliższej aktualizacji rynku.</p>
+            <select class="input" name="coin" data-coin-select data-i18n-aria="admin.coin-aria" aria-label="Waluta"></select>
+            <input class="input" name="percent" inputmode="decimal" placeholder="np. 40 albo -30" data-i18n-ph="admin.trend.ph" required>
+            <button type="submit" class="btn btn-blue" data-i18n="admin.trend.btn">Załaduj trend 🤫</button>
+          </form>
+
+          <div class="card inner">
+            <h3 class="subtitle" data-i18n="admin.force.title">3. Wymuś aktualizację</h3>
+            <p class="muted small" data-i18n="admin.force.hint">Uruchamia od razu standardowy cykl cen.</p>
+            <button type="button" class="btn btn-primary" id="admin-force" data-i18n="admin.force.btn">Odśwież rynek 🔄</button>
+          </div>
+
+          <form class="card inner danger" id="admin-reset-form" autocomplete="off">
+            <h3 class="subtitle accent-red" data-i18n="admin.reset.title">4. Reset giełdy</h3>
+            <p class="muted small" data-i18n="admin.reset.hint">Ceny wracają do startowych, historia i newsy są czyszczone. Zlecenia limit są zwracane.</p>
+            <label class="check"><input type="checkbox" name="wipe"> <span data-i18n="admin.reset.wipe">Dodatkowo skasuj portfele i zeruj salda graczy</span></label>
+            <input class="input" name="confirm" placeholder="Wpisz RESET, aby potwierdzić" data-i18n-ph="admin.reset.ph" required>
+            <button type="submit" class="btn btn-danger" data-i18n="admin.reset.btn">RESETUJ 💀</button>
+          </form>
+
+          <form class="card inner wide" id="admin-player-form" autocomplete="off">
+            <h3 class="subtitle accent-purple" data-i18n="admin.player.title">5. Konta graczy</h3>
+            <div class="player-grid">
+              <input class="input" name="player" placeholder="Nick gracza" data-i18n-ph="admin.player.nick" required>
+              <select class="input" name="asset" id="admin-asset" data-i18n-aria="admin.asset-aria" aria-label="Aktywo"></select>
+              <select class="input" name="op" data-i18n-aria="admin.op-aria" aria-label="Operacja">
+                <option value="add" data-i18n="admin.op.add">Dodaj (+)</option>
+                <option value="sub" data-i18n="admin.op.sub">Odejmij (−)</option>
+                <option value="set" data-i18n="admin.op.set">Ustaw (=)</option>
+              </select>
+              <input class="input" name="value" inputmode="decimal" placeholder="Ilość" data-i18n-ph="admin.player.qty-ph" required>
+              <button type="submit" class="btn btn-purple" data-i18n="admin.player.btn">Wykonaj</button>
+            </div>
+          </form>
+
+          <div class="card inner wide" id="admin-events-card">
+            <h3 class="subtitle accent-yellow" data-i18n="admin.events.title">6. Eventy rynkowe</h3>
+            <p class="muted small" data-i18n="admin.events.hint">Wszystkie eventy.</p>
+            <div class="row">
+              <button type="button" class="btn btn-ghost" id="admin-events-import" data-i18n="admin.events.import">Importuj domyślne eventy</button>
+              <span class="muted small" data-i18n="admin.events.import-hint"></span>
+            </div>
+            <div class="table-wrap table-tall">
+              <table class="table">
+                <thead><tr><th data-i18n="admin.events.col-type">Rodzaj</th><th data-i18n="admin.events.col-coin">Waluta</th><th data-i18n="admin.events.col-change">Zmiana</th><th data-i18n="admin.events.col-weight">Waga</th><th data-i18n="admin.events.col-text">Treść</th><th></th></tr></thead>
+                <tbody id="admin-events-body"></tbody>
+              </table>
+            </div>
+            <form class="event-form" id="admin-event-form" autocomplete="off">
+              <h4 class="subtitle" data-i18n="admin.events.new">Nowy event</h4>
+              <div class="event-grid">
+                <select class="input" name="kind" data-i18n-aria="admin.events.kind-aria" aria-label="Rodzaj eventu">
+                  <option value="bull" data-i18n="admin.events.kind-bull">HOSSA</option>
+                  <option value="bear" data-i18n="admin.events.kind-bear">BESSA</option>
+                  <option value="info" data-i18n="admin.events.kind-info">INFO</option>
+                </select>
+                <select class="input" name="coin" id="admin-event-coin" data-i18n-aria="admin.coin-aria" aria-label="Waluta"></select>
+                <input class="input" name="change" inputmode="decimal" placeholder="Zmiana ceny w %" data-i18n-ph="admin.events.change-ph">
+                <input class="input" name="weight" inputmode="numeric" value="1" placeholder="Waga" data-i18n-ph="admin.events.weight-ph">
+              </div>
+              <input class="input" name="text" maxlength="300" placeholder="Treść" data-i18n-ph="admin.events.text-ph" required>
+              <button type="submit" class="btn btn-primary" data-i18n="admin.events.add">Dodaj event</button>
+            </form>
+          </div>
+
+          <div class="card inner wide" id="admin-coins-card">
+            <h3 class="subtitle accent-blue" data-i18n="admin.coins.title">7. Kryptowaluty</h3>
+            <p class="muted small" data-i18n="admin.coins.hint"></p>
+            <div class="table-wrap table-tall">
+              <table class="table">
+                <thead><tr><th data-i18n="admin.coins.col-coin">Waluta</th><th data-i18n="admin.coins.col-start">Cena startowa</th><th data-i18n="admin.coins.col-vol">Zmienność</th><th data-i18n="admin.coins.col-liq">Płynność</th><th data-i18n="admin.coins.col-src">Źródło</th><th></th></tr></thead>
+                <tbody id="admin-coins-body"></tbody>
+              </table>
+            </div>
+            <form class="event-form" id="admin-coin-form" autocomplete="off">
+              <h4 class="subtitle" id="admin-coin-form-title" data-i18n="admin.coins.new">Nowa kryptowaluta</h4>
+              <div class="coin-grid">
+                <input class="input" name="id" maxlength="24" placeholder="Nazwa" data-i18n-ph="admin.coins.id-ph" required>
+                <input class="input" name="price" inputmode="decimal" placeholder="Cena startowa" data-i18n-ph="admin.coins.price-ph" required>
+                <input class="input" name="volMin" inputmode="decimal" value="0.96" placeholder="min" data-i18n-ph="admin.coins.vmin-ph" data-i18n-title="admin.coins.vmin-ph" required>
+                <input class="input" name="volMax" inputmode="decimal" value="1.04" placeholder="max" data-i18n-ph="admin.coins.vmax-ph" data-i18n-title="admin.coins.vmax-ph" required>
+                <input class="input" name="liquidity" inputmode="decimal" placeholder="Płynność" data-i18n-ph="admin.coins.liq-ph">
+                <input class="input" name="icon" list="icon-list" maxlength="40" value="GOLD_NUGGET" placeholder="Ikona" data-i18n-ph="admin.coins.icon-ph" data-i18n-title="admin.coins.icon-ph">
+                <datalist id="icon-list"></datalist>
+              </div>
+              <p class="muted tiny" data-i18n="admin.coins.help"></p>
+              <div class="row">
+                <button type="submit" class="btn btn-primary" id="admin-coin-submit" data-i18n="admin.coins.add">Dodaj kryptowalutę</button>
+                <button type="button" class="btn btn-ghost" id="admin-coin-cancel" hidden data-i18n="admin.coins.cancel">Anuluj edycję</button>
+              </div>
+            </form>
+          </div>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <footer class="footer">
+    <p data-i18n="footer">Waluty, ceny i portfele istnieją wyłącznie w grze. Rynek zawiera automatyczne boty i wydarzenia losowe. To nie jest prawdziwa giełda ani usługa finansowa.</p>
+  </footer>
+
+  <script src="/i18n.js"></script>
+  <script src="/chart.js"></script>
+  <script src="/app.js"></script>
+</body>
+</html>
